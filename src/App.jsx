@@ -121,6 +121,8 @@ export default function App(){
   const[ns,setNs]=useState({s:"",q:"",a:"",c:"",sc:""});
   const[beg,setBeg]=useState(true);
   const[announce,setAnnounce]=useState("");
+  const[apiKey,setApiKey]=useState(()=>localStorage.getItem("stockai-api-key")||"");
+  const[showKey,setShowKey]=useState(false);
   const tabRefs=useRef([]);
   const panelRef=useRef(null);
 
@@ -133,7 +135,8 @@ export default function App(){
   const add=()=>{if(!ns.s||!ns.q||!ns.a||!ns.c)return;setPf([...pf,{symbol:ns.s,qty:+ns.q,avg:+ns.a,cur:+ns.c,sec:ns.sc||"기타"}]);setAnnounce(ns.s+" 종목이 추가되었습니다");setNs({s:"",q:"",a:"",c:"",sc:""});};
   const delStock=(idx)=>{const symbol=pf[idx].symbol;setPf(pf.filter((_,j)=>j!==idx));setAnnounce(symbol+" 종목이 삭제되었습니다");};
 
-  const callAI=async(prompt,sr,sl)=>{sl(true);sr("");try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}],tools:[{type:"web_search_20250305",name:"web_search"}]})});const d=await r.json();sr(d.content?.filter(c=>c.type==="text").map(c=>c.text).join("\n")||"결과를 가져오지 못했습니다.");}catch(e){sr("오류: "+e.message);}sl(false);};
+  const saveApiKey=(key)=>{setApiKey(key);localStorage.setItem("stockai-api-key",key);};
+  const callAI=async(prompt,sr,sl)=>{if(!apiKey){setShowKey(true);sr("API 키를 먼저 설정해주세요. 헤더의 🔑 버튼을 눌러 Anthropic API 키를 입력하세요.");return;}sl(true);sr("");try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}],tools:[{type:"web_search_20250305",name:"web_search"}]})});const d=await r.json();if(d.error){sr("오류: "+d.error.message);sl(false);return;}sr(d.content?.filter(c=>c.type==="text").map(c=>c.text).join("\n")||"결과를 가져오지 못했습니다.");}catch(e){sr("오류: "+e.message);}sl(false);};
 
   const bg=beg?BG:"\n한국어로 답변.\n";
 
@@ -227,6 +230,7 @@ export default function App(){
           <div><div style={{fontSize:15,fontWeight:800,color:"#d5dced"}}>StockAI</div><div style={{fontSize:9.5,color:"#374460",letterSpacing:1}}>AI 주식 분석 & 추천</div></div>
         </div>
         <div className="header-right">
+          <button onClick={()=>setShowKey(!showKey)} aria-label="API 키 설정" style={{background:apiKey?"#0d1320":"linear-gradient(135deg,#ff5470,#ffb800)",border:apiKey?"1px solid #161f35":"none",borderRadius:7,padding:"5px 10px",fontSize:12,color:apiKey?"#5e6e88":"#fff",cursor:"pointer",fontWeight:600}} title="Anthropic API 키 설정"><span aria-hidden="true">🔑</span> {apiKey?"API 설정됨":"API 키 필요"}</button>
           <div style={{display:"flex",alignItems:"center",gap:6}}>
             <span style={{fontSize:11.5,color:beg?"#00e4a0":"#374460",fontWeight:600}}><span aria-hidden="true">📚</span> 초보자 모드</span>
             <button onClick={()=>setBeg(!beg)} role="switch" aria-checked={beg} aria-label="초보자 모드" style={{width:40,height:22,borderRadius:11,border:"none",cursor:"pointer",position:"relative",background:beg?"linear-gradient(135deg,#7c5cfc,#00e4a0)":"#161f35"}}>
@@ -242,6 +246,9 @@ export default function App(){
           </nav>
         </div>
       </header>
+
+      {/* API Key Modal */}
+      {showKey&&(<div style={{position:"fixed",inset:0,background:"#000a",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowKey(false)}><div onClick={e=>e.stopPropagation()} role="dialog" aria-label="API 키 설정" style={{background:"#0d1320",border:"1px solid #161f35",borderRadius:14,padding:"24px 28px",maxWidth:420,width:"100%"}}><div style={{fontSize:15,fontWeight:700,color:"#d5dced",marginBottom:6}}>Anthropic API 키 설정</div><div style={{fontSize:12,color:"#374460",marginBottom:14}}>AI 기능 사용을 위해 Anthropic API 키가 필요합니다. 키는 브라우저에만 저장됩니다.</div><input type="password" value={apiKey} onChange={e=>saveApiKey(e.target.value)} placeholder="sk-ant-..." aria-label="API 키 입력" style={{...IS,width:"100%",fontSize:14,padding:"10px 14px",marginBottom:12}}/><div style={{display:"flex",gap:8}}><button onClick={()=>setShowKey(false)} style={{...BP,flex:1}}>{apiKey?"저장 완료":"닫기"}</button>{apiKey&&<button onClick={()=>{saveApiKey("");}} style={{background:"#161f35",border:"1px solid #283350",borderRadius:9,color:"#ff5470",fontWeight:600,fontSize:13,padding:"9px 16px",cursor:"pointer"}}>삭제</button>}</div></div></div>)}
 
       <main id="main-content" className="main-content">
         {/* Beginner Banner */}
