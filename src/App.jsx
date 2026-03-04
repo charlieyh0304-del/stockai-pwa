@@ -20,7 +20,7 @@ const THEMES = [
   {e:"🏗️",l:"건설 / 인프라",k:"건설 인프라 관련주"},{e:"📱",l:"플랫폼 / 콘텐츠",k:"플랫폼 콘텐츠 관련주"},
   {e:"💰",l:"고배당주",k:"고배당 배당성장 관련주"},{e:"📊",l:"실적 호전주",k:"최근 실적 호전 관련주"},
 ];
-const BG = `\n중요: 전문 용어마다 괄호로 쉬운 설명을 달아주세요. 예: PER(주가수익비율 - 주가가 순이익의 몇 배인지, 낮을수록 저평가). 숫자는 좋은지 나쁜지 판단 기준도 함께 알려주세요. 각 섹션 끝에 "> 💡 초보자 팁:" 한 줄을 추가해 핵심을 쉽게 요약하세요. 비유와 일상 예시를 적극 활용하세요. 마지막에 "## 📖 용어 사전" 섹션을 추가해 리포트에서 사용된 주요 투자 용어를 한 줄씩 쉽게 설명하세요. 한국어로 답변.\n`;
+const BG = `\n전문용어에 괄호로 쉬운설명 추가. 각 섹션 끝에 "> 💡 초보자 팁:" 한줄 추가. 마지막에 "## 📖 용어 사전" 추가. 한국어.\n`;
 
 const TAB_NAMES = ["포트폴리오","실시간","종목분석","AI추천","시장스캔","뉴스","AI챗봇"];
 const TAB_EMOJIS = ["📊","📈","🔍","💡","🌐","📰","💬"];
@@ -171,17 +171,17 @@ export default function App(){
   const delStock=(idx)=>{const symbol=pf[idx].symbol;setPf(pf.filter((_,j)=>j!==idx));setAnnounce(symbol+" 종목이 삭제되었습니다");};
 
   const saveApiKey=(key)=>{const k=key.trim();if(k&&!k.startsWith("sk-ant-")){setAnnounce("API 키는 sk-ant-로 시작해야 합니다. 키를 확인해주세요.");}setApiKey(k);localStorage.setItem("stockai-api-key",k);};
-  const callAI=async(prompt,sr,sl)=>{if(!apiKey){setShowKey(true);sr("API 키를 먼저 설정해주세요. 헤더의 🔑 버튼을 눌러 Anthropic API 키를 입력하세요.");return;}sl(true);sr("");try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}],tools:[{type:"web_search_20250305",name:"web_search"}]})});const d=await r.json();if(d.error){sr(d.error.type==="authentication_error"?"API 키가 올바르지 않습니다. 🔑 버튼에서 키를 확인해주세요.":"오류: "+d.error.message);sl(false);return;}sr(d.content?.filter(c=>c.type==="text").map(c=>c.text).join("\n")||"결과를 가져오지 못했습니다.");}catch(e){sr("오류: "+e.message);}sl(false);};
+  const callAI=async(prompt,sr,sl)=>{if(!apiKey){setShowKey(true);sr("API 키를 먼저 설정해주세요. 헤더의 🔑 버튼을 눌러 Anthropic API 키를 입력하세요.");return;}sl(true);sr("");try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1024,messages:[{role:"user",content:prompt}],tools:[{type:"web_search_20250305",name:"web_search"}]})});const d=await r.json();if(d.error){sr(d.error.type==="authentication_error"?"API 키가 올바르지 않습니다. 🔑 버튼에서 키를 확인해주세요.":"오류: "+d.error.message);sl(false);return;}sr(d.content?.filter(c=>c.type==="text").map(c=>c.text).join("\n")||"결과를 가져오지 못했습니다.");}catch(e){sr("오류: "+e.message);}sl(false);};
 
   const callChatAI=async(userMsg)=>{
     if(!apiKey){setShowKey(true);setChatMsgs(prev=>[...prev,{role:"assistant",content:"API 키를 먼저 설정해주세요. 헤더의 🔑 버튼을 눌러 Anthropic API 키를 입력하세요."}]);return;}
     const newMsgs=[...chatMsgs,{role:"user",content:userMsg}];
     setChatMsgs(newMsgs);setChatIn("");setChatLd(true);
     const ps=pf.map(p=>`${p.symbol}(${p.sec}, 수량:${p.qty}, 평균:${fmt(p.avg)}, 현재:${fmt(p.cur)})`).join(", ");
-    const sysPrompt=`당신은 친절한 AI 투자 상담사입니다. 한국 주식시장 전문가이며, 사용자의 질문에 정확하고 이해하기 쉽게 답변합니다.\n\n사용자 포트폴리오: ${ps||"없음"}\n${beg?"초보자 모드가 켜져 있습니다. 전문 용어마다 괄호로 쉬운 설명을 달아주세요. 비유와 일상 예시를 적극 활용하세요.\n":""}한국어로 답변하세요. 마크다운 형식으로 답변하세요.\n⚠️ 투자 권유가 아닌 정보 제공 목적임을 필요시 안내하세요.`;
+    const sysPrompt=`AI투자상담사. 포트폴리오:${ps||"없음"}. ${beg?"초보자모드:용어에 쉬운설명 괄호추가. ":""}한국어 마크다운. 정보제공목적.`;
     const apiMsgs=newMsgs.slice(-20).map(m=>({role:m.role,content:m.content}));
     try{
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,system:sysPrompt,messages:apiMsgs,tools:[{type:"web_search_20250305",name:"web_search"}]})});
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1024,system:sysPrompt,messages:apiMsgs,tools:[{type:"web_search_20250305",name:"web_search"}]})});
       const d=await r.json();
       if(d.error){setChatMsgs(prev=>[...prev,{role:"assistant",content:d.error.type==="authentication_error"?"API 키가 올바르지 않습니다. 🔑 버튼에서 키를 확인해주세요.":"오류: "+d.error.message}]);setChatLd(false);return;}
       const text=d.content?.filter(c=>c.type==="text").map(c=>c.text).join("\n")||"답변을 생성하지 못했습니다.";
@@ -194,61 +194,26 @@ export default function App(){
 
   const fetchPrices=()=>{
     const symbols=pf.map(p=>p.symbol).join(", ");
-    callAI(`한국 주식시장 전문 애널리스트입니다. 웹 검색으로 다음 정보를 최신 데이터로 조회하세요.
-
-## 📊 주요 지수
-코스피, 코스닥, 원/달러 환율의 현재값, 전일 대비 등락폭(+/-), 등락률(%)을 표로 정리.
-
-## 📈 보유 종목 시세
-다음 종목들의 실시간 시세를 조회: ${symbols||"삼성전자, SK하이닉스, NAVER, 카카오, 현대차"}
-
-각 종목별로:
-- **현재가** (원)
-- **전일 대비** (+/- 금액, %)
-- **거래량**
-- **시가총액**
-- **52주 최고/최저**
-
-표 형태로 깔끔하게 정리해주세요.
-
-## 🔥 오늘의 특징주
-오늘 급등/급락한 주요 종목 3개씩, 사유와 함께 간단히.
-
-## 📌 시장 한줄 요약
-현재 시장 분위기를 한 문장으로.
-
-한국어로 답변.`,setPrR,setPrL);
+    callAI(`웹검색으로 한국 주식시장 조회. 종목: ${symbols||"삼성전자, SK하이닉스, NAVER, 카카오, 현대차"}
+## 주요지수: 코스피,코스닥,환율 표
+## 보유종목 시세: 현재가,전일대비,거래량 표
+## 특징주: 급등/급락 각 2개
+## 시장 한줄요약
+한국어.`,setPrR,setPrL);
   };
 
-  const analyze=()=>{if(!q.trim())return;callAI(`한국 주식시장 전문 애널리스트이자 초보자 멘토로서 "${q}" 종목을 웹 검색으로 최신 정보 기반 분석하세요.\n\n## 기업 개요\n이 회사가 뭘 하는지, 우리 일상과 어떻게 연결되는지 쉽게 설명. 핵심 경쟁력 포함.\n> 💡 초보자 팁: 한 줄 요약\n\n## 핵심 재무 지표\n매출, 영업이익, 순이익, PER, PBR, ROE 등. 각 지표가 뭔지, 이 수치가 좋은지 나쁜지 설명.\n> 💡 초보자 팁: 한 줄 요약\n\n## 강점 (투자하면 좋은 이유)\n긍정적 요인 3가지를 구체적 근거와 함께.\n> 💡 초보자 팁: 한 줄 요약\n\n## 리스크 (조심할 점)\n위험 요인 3가지를 구체적 근거와 함께.\n> 💡 초보자 팁: 한 줄 요약\n\n## 업종 전망\n이 산업의 미래 트렌드.\n> 💡 초보자 팁: 한 줄 요약\n\n## 종합 의견\n"이런 사람에게 적합 / 이런 사람은 주의" 형태로 정리.\n\n## 📖 용어 사전\n리포트에 쓰인 주요 용어를 한 줄씩 쉽게 설명.\n\n⚠️ 본 분석은 정보 제공 목적이며 투자 권유가 아닙니다.${bg}`,setRes,setLd);};
+  const analyze=()=>{if(!q.trim())return;callAI(`"${q}" 종목 웹검색 후 분석. ## 기업개요 ## 재무지표(PER,PBR,ROE) ## 강점3개 ## 리스크3개 ## 업종전망 ## 종합의견. ⚠️정보제공목적.${bg}`,setRes,setLd);};
 
-  const recommend=()=>{const ps=pf.map(p=>`${p.symbol}(${p.sec})`).join(", ");callAI(`전문 투자 리서치 애널리스트이자 초보자 멘토로서, 웹 검색으로 최신 정보 반영.\n\n보유: ${ps||"없음"}\n스타일: ${sty}\n\n## 포트폴리오 진단\n섹터 편중, 분산도, 리스크 진단. 각 개념을 쉽게 풀어 설명.\n> 💡 초보자 팁: 한 줄 요약\n\n## 추천 종목 5선\n각 종목:\n### [종목명] (섹터)\n- **이 회사는?**: 쉬운 설명\n- **추천 이유**: 구체적 근거\n- **핵심 수치**: 재무지표 + 의미\n- **리스크**: 주의점\n- **난이도**: 초보 적합 / 중급 이상\n\n## 포트폴리오 개선 제안\n비중 조절, 리밸런싱 등 용어 설명 포함.\n\n## 📖 용어 사전\n주요 용어 한 줄 설명.\n\n⚠️ 본 분석은 정보 제공 목적이며 투자 권유가 아닙니다.${bg}`,setRR,setRL);};
+  const recommend=()=>{const ps=pf.map(p=>`${p.symbol}(${p.sec})`).join(", ");callAI(`웹검색 후 종목추천. 보유:${ps||"없음"}, 스타일:${sty}. ## 포트폴리오진단 ## 추천종목5개(종목명,추천이유,리스크) ## 개선제안. ⚠️정보제공목적.${bg}`,setRR,setRL);};
 
-  const scan=(theme)=>{const t=theme||sC;if(!t.trim())return;setST(t);callAI(`한국 주식시장 전문 리서치 애널리스트이자 초보자 멘토.\n\n"${t}" 테마를 웹 검색으로 최신 뉴스와 동향 파악 후 유망 종목 분석.\n\n## 🔥 이 테마가 뭔가요?\n"${t}" 테마가 뭔지, 왜 주목받는지 쉽게 설명.\n> 💡 초보자 팁: 한 줄 요약\n\n## 📰 최신 시장 동향\n관련 최근 뉴스와 흐름 구체적 요약.\n> 💡 초보자 팁: 한 줄 요약\n\n## 📈 주목 종목 TOP 5\n### 1. [종목명] (코스피/코스닥)\n- **이 회사는?**: 쉬운 설명\n- **왜 관련?**: 구체적 연결고리\n- **현재 상황**: 주가, 실적 + 숫자 의미\n- **투자 매력도**: ★~★★★★★ (이유)\n- **리스크**: 주의점\n- **난이도**: 초보 적합 / 중급 이상\n\n## 💡 투자 전략\n분할매수, 비중 조절 등 용어 설명 포함.\n\n## ⚠️ 주의사항\n테마주 위험성도 설명.\n\n## 📖 용어 사전\n주요 용어 한 줄 설명.\n\n⚠️ 본 분석은 정보 제공 목적이며 투자 권유가 아닙니다.${bg}`,setSR,setSL);};
+  const scan=(theme)=>{const t=theme||sC;if(!t.trim())return;setST(t);callAI(`"${t}" 테마 웹검색. ## 테마설명 ## 최신동향 ## 주목종목TOP5(종목명,관련이유,현황,리스크) ## 투자전략 ## 주의사항. ⚠️정보제공목적.${bg}`,setSR,setSL);};
 
   const fetchNews=()=>{
     const symbols=pf.map(p=>p.symbol).join(", ");
     const catPrompt=nwCat==="보유종목"?`특히 다음 보유 종목 관련 뉴스 위주로: ${symbols||"주요 대형주"}`
       :nwCat==="전체"?"한국 주식시장 전반의 주요 뉴스"
       :`"${nwCat}" 관련 주식 뉴스`;
-    callAI(`한국 주식시장 전문 뉴스 애널리스트입니다. 웹 검색으로 오늘 가장 중요한 최신 주식 뉴스를 조회하세요.
-
-카테고리: ${catPrompt}
-
-## 📰 주요 뉴스 TOP 5
-각 뉴스별로:
-### [번호]. [뉴스 제목]
-- **핵심 내용**: 2-3문장 요약
-- **관련 종목**: 해당 뉴스로 영향받는 종목들 (긍정적↑ / 부정적↓ 표시)
-- **투자 시사점**: 투자자가 알아야 할 포인트
-
-## 📊 시장 심리 분석
-현재 시장 분위기(공포/중립/탐욕), 주요 이슈 키워드 3개.
-
-## 🔮 내일 주목할 이벤트
-내일 예정된 주요 경제 이벤트, 실적 발표 등.
-
-한국어로 답변.`,setNwR,setNwL);
+    callAI(`웹검색으로 최신 주식뉴스. ${catPrompt}. ## 주요뉴스TOP5(제목,요약,관련종목↑↓) ## 시장심리(공포/중립/탐욕) ## 내일주목이벤트. 한국어.`,setNwR,setNwL);
   };
 
   const handleTabKeyDown=(e)=>{
