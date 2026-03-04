@@ -22,8 +22,12 @@ const THEMES = [
 ];
 const BG = `\n전문용어에 괄호로 쉬운설명 추가. 각 섹션 끝에 "> 💡 초보자 팁:" 한줄 추가. 마지막에 "## 📖 용어 사전" 추가. 한국어.\n`;
 
-const TAB_NAMES = ["포트폴리오","실시간","종목분석","AI추천","시장스캔","뉴스","AI챗봇"];
-const TAB_EMOJIS = ["📊","📈","🔍","💡","🌐","📰","💬"];
+const MENU = [
+  {label:"포트폴리오",emoji:"📊",tab:0},
+  {label:"AI분석",emoji:"🤖",children:[{label:"종목분석",emoji:"🔍",tab:2},{label:"AI추천",emoji:"💡",tab:3},{label:"시장스캔",emoji:"🌐",tab:4}]},
+  {label:"시장정보",emoji:"📈",children:[{label:"실시간시세",emoji:"📈",tab:1},{label:"뉴스",emoji:"📰",tab:5}]},
+  {label:"학습",emoji:"📚",tab:6},
+];
 const CHAT_SUGGESTIONS = [
   "초보자가 주식 시작할 때 알아야 할 것은?",
   "내 포트폴리오 어떻게 개선할 수 있을까?",
@@ -42,10 +46,14 @@ input::placeholder{color:#243050}
 
 .header{padding:14px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #0d1320;flex-wrap:wrap;gap:10px}
 .header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.tab-bar{display:flex;gap:2px;background:#090e18;border-radius:8px;padding:2px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.tab-bar::-webkit-scrollbar{display:none}
-.tab-btn{background:transparent;border:1px solid transparent;border-radius:6px;padding:6px 13px;color:#374460;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit}
-.tab-btn.active{background:linear-gradient(135deg,#7c5cfc12,#00e4a008);border:1px solid #7c5cfc30;color:#d5dced}
+.main-nav{display:flex;gap:2px;background:#090e18;border-radius:8px;padding:2px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.main-nav::-webkit-scrollbar{display:none}
+.main-nav-btn{background:transparent;border:1px solid transparent;border-radius:6px;padding:6px 14px;color:#374460;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit}
+.main-nav-btn.active{background:linear-gradient(135deg,#7c5cfc12,#00e4a008);border:1px solid #7c5cfc30;color:#d5dced}
+.sub-nav{display:flex;gap:2px;padding:4px 0 0 0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sub-nav::-webkit-scrollbar{display:none}
+.sub-nav-btn{background:transparent;border:1px solid transparent;border-radius:5px;padding:4px 12px;color:#4a5c78;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit}
+.sub-nav-btn.active{background:#7c5cfc18;border:1px solid #7c5cfc22;color:#a78bfa}
 
 .main-content{padding:20px 24px;max-width:1020px;margin:0 auto}
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -61,8 +69,9 @@ input::placeholder{color:#243050}
 @media(max-width:768px){
   .header{padding:12px 16px;gap:8px}
   .header-right{width:100%;justify-content:space-between}
-  .tab-bar{flex:1;min-width:0}
-  .tab-btn{padding:6px 10px;font-size:11px}
+  .main-nav{flex:1;min-width:0}
+  .main-nav-btn{padding:6px 10px;font-size:11px}
+  .sub-nav-btn{padding:4px 9px;font-size:10.5px}
   .main-content{padding:14px 12px}
   .stats-grid{grid-template-columns:repeat(2,1fr);gap:8px}
   .charts-grid{grid-template-columns:1fr}
@@ -81,7 +90,7 @@ input::placeholder{color:#243050}
   .stats-grid{grid-template-columns:1fr 1fr;gap:6px}
   .themes-grid{grid-template-columns:repeat(2,1fr);gap:5px}
   .quick-grid{grid-template-columns:1fr 1fr;gap:6px}
-  .tab-btn{padding:5px 8px;font-size:10.5px}
+  .main-nav-btn{padding:5px 8px;font-size:10.5px}
   .chat-container{height:calc(100vh - 160px)}
   .chat-input-bar{padding:8px 10px;gap:6px}
   .chat-input-bar input{font-size:13px;padding:9px 12px}
@@ -107,13 +116,31 @@ input::placeholder{color:#243050}
   .chat-messages{padding:12px}
   .chat-input-bar{padding:10px 12px}
 }
+
+.chat-fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#7c5cfc,#6b4ce0);border:none;color:#fff;font-size:26px;cursor:pointer;z-index:999;box-shadow:0 4px 20px #7c5cfc44;display:flex;align-items:center;justify-content:center;transition:transform 0.2s,box-shadow 0.2s}
+.chat-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px #7c5cfc66}
+
+.chat-panel{position:fixed;bottom:96px;right:24px;width:380px;height:500px;background:#060a12;border:1px solid #161f35;border-radius:16px;z-index:999;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 40px #0008}
+.chat-panel .chat-container{height:100%;border-radius:0}
+
+@media(max-width:480px){
+  .chat-fab{bottom:16px;right:16px;width:54px;height:54px;font-size:24px}
+  .chat-panel{bottom:0;right:0;left:0;width:100%;height:100%;border-radius:0;top:0}
+}
+
+.guide-steps{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.guide-terms{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:768px){
+  .guide-steps{grid-template-columns:1fr}
+  .guide-terms{grid-template-columns:1fr}
+}
 `;
 
 function Donut({data,size=148}){const total=data.reduce((s,d)=>s+d.value,0);let cum=0;const ariaLabel="섹터별 비중: "+data.map(d=>d.label+" "+((d.value/total)*100).toFixed(1)+"%").join(", ");return(<div className="donut-wrap"><svg width={size} height={size} role="img" aria-label={ariaLabel}>{data.map((d,i)=>{const s0=cum/total;cum+=d.value;const e0=cum/total;const sa=s0*Math.PI*2-Math.PI/2,ea=e0*Math.PI*2-Math.PI/2;const la=e0-s0>0.5?1:0,r=size/2-7,ir=r*0.6,cx=size/2,cy=size/2;return<path key={i} d={`M${cx+r*Math.cos(sa)},${cy+r*Math.sin(sa)} A${r},${r} 0 ${la} 1 ${cx+r*Math.cos(ea)},${cy+r*Math.sin(ea)} L${cx+ir*Math.cos(ea)},${cy+ir*Math.sin(ea)} A${ir},${ir} 0 ${la} 0 ${cx+ir*Math.cos(sa)},${cy+ir*Math.sin(sa)}Z`} fill={CL[i%8]} opacity={0.85}/>;})}</svg><table className="sr-only"><caption>섹터별 비중</caption><thead><tr><th scope="col">섹터</th><th scope="col">비중</th></tr></thead><tbody>{data.map((d,i)=>(<tr key={i}><td>{d.label}</td><td>{((d.value/total)*100).toFixed(1)}%</td></tr>))}</tbody></table><div style={{display:"flex",flexDirection:"column",gap:4}}>{data.map((d,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:6,fontSize:11.5}}><div style={{width:8,height:8,borderRadius:2,background:CL[i%8]}} aria-hidden="true"/><span style={{color:"#5e6e88"}}>{d.label}</span><span style={{color:"#a0adc4",fontWeight:700}}>{((d.value/total)*100).toFixed(1)}%</span></div>))}</div></div>);}
 
 function HBar({data}){const mx=Math.max(...data.map(d=>Math.abs(d.value)),1);const ariaLabel="종목별 수익률: "+data.map(d=>d.label+" "+pct(d.value)).join(", ");return(<div role="img" aria-label={ariaLabel}><div style={{display:"flex",flexDirection:"column",gap:5}}>{data.map((d,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:74,fontSize:11.5,color:"#5e6e88",textAlign:"right",flexShrink:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.label}</span><div style={{flex:1,height:17,background:"#101828",borderRadius:3,position:"relative",overflow:"hidden"}} aria-hidden="true"><div style={{position:"absolute",left:d.value>=0?"50%":undefined,right:d.value<0?"50%":undefined,width:`${(Math.abs(d.value)/mx)*50}%`,height:"100%",borderRadius:3,transition:"width 0.5s",background:d.value>=0?"linear-gradient(90deg,#00e4a044,#00e4a0)":"linear-gradient(270deg,#ff547044,#ff5470)"}}/></div><span style={{width:54,fontSize:11,fontWeight:700,color:pc(d.value),textAlign:"right",fontFamily:"monospace"}}>{pct(d.value)}</span></div>))}</div><ul className="sr-only">{data.map((d,i)=>(<li key={i}>{d.label}: {pct(d.value)} {d.value>=0?"이익":"손실"}</li>))}</ul></div>);}
 
-function Card({title,children,style:s}){return(<div role={title?"region":undefined} aria-label={title||undefined} style={{background:"linear-gradient(160deg,#0d1320,#090e18)",border:"1px solid #161f35",borderRadius:12,padding:"16px 19px",...s}}>{title&&<h2 style={{fontSize:10.5,fontWeight:700,color:"#374460",textTransform:"uppercase",letterSpacing:1.5,margin:"0 0 12px 0"}}>{title}</h2>}{children}</div>);}
+function Card({title,children,style:s}){return(<div role={title?"region":undefined} aria-label={title||undefined} style={{background:"linear-gradient(160deg,#0d1320,#090e18)",border:"1px solid #161f35",borderRadius:12,padding:"16px 19px",...s}}>{title&&<h3 style={{fontSize:10.5,fontWeight:700,color:"#374460",textTransform:"uppercase",letterSpacing:1.5,margin:"0 0 12px 0"}}>{title}</h3>}{children}</div>);}
 
 function LoadDots({msg}){const[n,setN]=useState(0);useEffect(()=>{const t=setInterval(()=>setN(p=>(p+1)%4),400);return()=>clearInterval(t);},[]);return(<div role="status" aria-live="polite" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:45}}><div style={{textAlign:"center"}}><div style={{width:48,height:48,borderRadius:24,background:"linear-gradient(135deg,#7c5cfc22,#00e4a011)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22}} aria-hidden="true"><div style={{animation:"spin 1.5s linear infinite"}}>⟳</div></div><div style={{color:"#7c5cfc",fontWeight:600,fontSize:14}}>{"AI가 분석 중"+".".repeat(n)}</div><div style={{fontSize:11.5,color:"#374460",marginTop:5}}>{msg}</div></div></div>);}
 
@@ -156,7 +183,7 @@ export default function App(){
   const[chatMsgs,setChatMsgs]=useState([]);
   const[chatIn,setChatIn]=useState("");
   const[chatLd,setChatLd]=useState(false);
-  const tabRefs=useRef([]);
+  const[chatOpen,setChatOpen]=useState(false);
   const panelRef=useRef(null);
   const chatEndRef=useRef(null);
 
@@ -216,12 +243,19 @@ export default function App(){
     callAI(`웹검색으로 최신 주식뉴스. ${catPrompt}. ## 주요뉴스TOP5(제목,요약,관련종목↑↓) ## 시장심리(공포/중립/탐욕) ## 내일주목이벤트. 한국어.`,setNwR,setNwL);
   };
 
-  const handleTabKeyDown=(e)=>{
-    const total=TAB_NAMES.length;
+  const activeMenuIdx=MENU.findIndex(m=>m.tab===tab||(m.children&&m.children.some(c=>c.tab===tab)));
+  const activeMenuObj=MENU[activeMenuIdx]||MENU[0];
+
+  const handleMainMenuClick=(menuIdx)=>{
+    const m=MENU[menuIdx];
+    if(m.children){setTab(m.children[0].tab);}else{setTab(m.tab);}
+  };
+
+  const handleMainKeyDown=(e)=>{
     let next=null;
-    if(e.key==="ArrowRight"){next=(tab+1)%total;}
-    else if(e.key==="ArrowLeft"){next=(tab-1+total)%total;}
-    if(next!==null){e.preventDefault();setTab(next);tabRefs.current[next]?.focus();}
+    if(e.key==="ArrowRight"){next=(activeMenuIdx+1)%MENU.length;}
+    else if(e.key==="ArrowLeft"){next=(activeMenuIdx-1+MENU.length)%MENU.length;}
+    if(next!==null){e.preventDefault();handleMainMenuClick(next);}
   };
 
   const IS={background:"#070b14",border:"1px solid #161f35",borderRadius:7,padding:"8px 12px",color:"#a0adc4",fontSize:13,outline:"none",fontFamily:"inherit"};
@@ -233,7 +267,7 @@ export default function App(){
       <style>{RESPONSIVE_CSS}</style>
 
       {/* Skip navigation */}
-      <a href="#main-content" className="sr-only" style={{position:'absolute',left:'-9999px',top:'auto',width:'1px',height:'1px',overflow:'hidden',zIndex:9999}} onFocus={e=>{e.target.style.position='static';e.target.style.width='auto';e.target.style.height='auto';}} onBlur={e=>{e.target.style.position='absolute';e.target.style.left='-9999px';}}>본문으로 건너뛰기</a>
+      <a href="#main-content" style={{position:'absolute',left:'-9999px',top:0,width:'1px',height:'1px',overflow:'hidden',zIndex:9999,background:'#7c5cfc',color:'#fff',padding:0,fontSize:14,fontWeight:700,textDecoration:'none',borderRadius:'0 0 8px 0'}} onFocus={e=>{Object.assign(e.target.style,{position:'fixed',left:'0',width:'auto',height:'auto',padding:'10px 18px',overflow:'visible'});}} onBlur={e=>{Object.assign(e.target.style,{position:'absolute',left:'-9999px',width:'1px',height:'1px',padding:'0',overflow:'hidden'});}}>본문으로 건너뛰기</a>
 
       {/* Live announcements */}
       <div className="sr-only" role="status" aria-live="polite">{announce}</div>
@@ -255,11 +289,18 @@ export default function App(){
             </button>
           </div>
           <nav aria-label="주요 메뉴">
-            <div className="tab-bar" role="tablist">
-              {TAB_NAMES.map((t,i)=>(
-                <button key={i} ref={el=>tabRefs.current[i]=el} onClick={()=>setTab(i)} onKeyDown={handleTabKeyDown} role="tab" aria-selected={tab===i} id={"tab-"+i} aria-controls={"tabpanel-"+i} tabIndex={tab===i?0:-1} className={`tab-btn${tab===i?" active":""}`}><span aria-hidden="true">{TAB_EMOJIS[i]} </span>{t}</button>
+            <div className="main-nav" role="menubar">
+              {MENU.map((m,i)=>(
+                <button key={i} onClick={()=>handleMainMenuClick(i)} onKeyDown={handleMainKeyDown} role="menuitem" aria-expanded={m.children?activeMenuIdx===i:undefined} aria-haspopup={m.children?"true":undefined} className={`main-nav-btn${activeMenuIdx===i?" active":""}`}><span aria-hidden="true">{m.emoji} </span>{m.label}</button>
               ))}
             </div>
+            {activeMenuObj.children&&(
+              <div className="sub-nav" role="menu" aria-label={activeMenuObj.label+" 하위 메뉴"}>
+                {activeMenuObj.children.map((c,i)=>(
+                  <button key={i} onClick={()=>setTab(c.tab)} role="menuitem" className={`sub-nav-btn${tab===c.tab?" active":""}`}><span aria-hidden="true">{c.emoji} </span>{c.label}</button>
+                ))}
+              </div>
+            )}
           </nav>
         </div>
       </header>
@@ -272,7 +313,8 @@ export default function App(){
         {beg&&tab!==0&&tab!==1&&(<div style={{marginBottom:14,padding:"10px 15px",background:"linear-gradient(135deg,#7c5cfc0a,#00e4a006)",border:"1px solid #7c5cfc22",borderRadius:10,display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:18}} aria-hidden="true">📚</span><div><div style={{fontSize:12.5,color:"#8a99b5",fontWeight:600}}>초보자 모드 ON</div><div style={{fontSize:11.5,color:"#4a5c78"}}>모든 전문 용어에 쉬운 설명 + 각 섹션에 초보자 팁이 추가됩니다</div></div></div>)}
 
         {/* ══ TAB 0: PORTFOLIO ══ */}
-        {tab===0&&(<div role="tabpanel" id="tabpanel-0" aria-labelledby="tab-0" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+        {tab===0&&(<div role="region" aria-label="포트폴리오" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+          <h2 className="sr-only">포트폴리오</h2>
           {beg&&<Card style={{background:"linear-gradient(135deg,#0d132088,#7c5cfc06)",border:"1px solid #7c5cfc18"}}><div style={{fontSize:13,color:"#8a99b5",lineHeight:1.7}}><b style={{color:"#d5dced"}}><span aria-hidden="true">💡</span> 포트폴리오란?</b> 내가 가지고 있는 주식들의 모음이에요. <b style={{color:"#00e4a0"}}>초록색</b>=이익, <b style={{color:"#ff5470"}}>빨간색</b>=손실. 아래에서 종목을 추가/삭제할 수 있어요.</div></Card>}
           <div className="stats-grid">
             {[{l:"총 투자금",v:fmt(tI)+"원",c:"#6b7e9a",t:"주식 사는데 쓴 총 돈",pl:false},{l:"현재 평가액",v:fmt(tC)+"원",c:"#d5dced",t:"지금 팔면 받을 돈",pl:false},{l:"총 수익률",v:pct(tR),c:pc(tR),t:"투자금 대비 수익 비율",pl:true,pv:tR},{l:"평가 손익",v:(tP>=0?"+":"")+fmt(tP)+"원",c:pc(tP),t:"실제 번(또는 잃은) 금액",pl:true,pv:tP}].map((x,i)=>(
@@ -304,7 +346,8 @@ export default function App(){
         </div>)}
 
         {/* ══ TAB 1: REALTIME PRICES ══ */}
-        {tab===1&&(<div role="tabpanel" id="tabpanel-1" aria-labelledby="tab-1" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+        {tab===1&&(<div role="region" aria-label="실시간 시세" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+          <h2 className="sr-only">실시간 시세</h2>
           <Card>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
               <div>
@@ -320,7 +363,8 @@ export default function App(){
         </div>)}
 
         {/* ══ TAB 2: AI ANALYSIS ══ */}
-        {tab===2&&(<div role="tabpanel" id="tabpanel-2" aria-labelledby="tab-2" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+        {tab===2&&(<div role="region" aria-label="AI 종목 분석" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+          <h2 className="sr-only">AI 종목 분석</h2>
           <Card>
             <div style={{fontSize:14.5,fontWeight:700,color:"#d5dced",marginBottom:4}}><span aria-hidden="true">🔍</span> AI 종목 분석</div>
             <div style={{fontSize:12,color:"#374460",marginBottom:13}}>종목명을 입력하면 AI가 웹에서 최신 정보를 검색하여 {beg?"초보자도 이해할 수 있는 ":""}분석 리포트를 생성합니다.</div>
@@ -335,7 +379,8 @@ export default function App(){
         </div>)}
 
         {/* ══ TAB 3: AI RECOMMENDATION ══ */}
-        {tab===3&&(<div role="tabpanel" id="tabpanel-3" aria-labelledby="tab-3" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+        {tab===3&&(<div role="region" aria-label="AI 종목 추천" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+          <h2 className="sr-only">AI 종목 추천</h2>
           <Card>
             <div style={{fontSize:14.5,fontWeight:700,color:"#d5dced",marginBottom:4}}><span aria-hidden="true">💡</span> AI 종목 추천</div>
             <div style={{fontSize:12,color:"#374460",marginBottom:13}}>포트폴리오와 투자 스타일 기반으로 {beg?"초보자도 따라할 수 있는 ":""}추천 종목과 개선 방향을 제안합니다.</div>
@@ -350,7 +395,8 @@ export default function App(){
         </div>)}
 
         {/* ══ TAB 4: AI MARKET SCAN ══ */}
-        {tab===4&&(<div role="tabpanel" id="tabpanel-4" aria-labelledby="tab-4" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+        {tab===4&&(<div role="region" aria-label="AI 시장 스캔" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+          <h2 className="sr-only">AI 시장 스캔</h2>
           <Card>
             <div style={{fontSize:14.5,fontWeight:700,color:"#d5dced",marginBottom:4}}><span aria-hidden="true">🌐</span> AI 시장 스캔</div>
             <div style={{fontSize:12,color:"#374460",marginBottom:14}}>AI가 인터넷에서 최신 뉴스를 검색하여 테마별 유망 종목을 찾아줍니다. {beg&&"초보자도 이해할 수 있도록 쉽게 설명해 드려요!"}</div>
@@ -367,7 +413,8 @@ export default function App(){
         </div>)}
 
         {/* ══ TAB 5: NEWS FEED ══ */}
-        {tab===5&&(<div role="tabpanel" id="tabpanel-5" aria-labelledby="tab-5" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+        {tab===5&&(<div role="region" aria-label="AI 뉴스 브리핑" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+          <h2 className="sr-only">AI 뉴스 브리핑</h2>
           <Card>
             <div style={{fontSize:14.5,fontWeight:700,color:"#d5dced",marginBottom:4}}><span aria-hidden="true">📰</span> AI 뉴스 브리핑</div>
             <div style={{fontSize:12,color:"#374460",marginBottom:13}}>AI가 웹에서 최신 주식 뉴스를 검색하여 핵심만 요약합니다</div>
@@ -382,20 +429,101 @@ export default function App(){
           )}
         </div>)}
 
-        {/* ══ TAB 6: AI CHATBOT ══ */}
-        {tab===6&&(<div role="tabpanel" id="tabpanel-6" aria-labelledby="tab-6" ref={panelRef} tabIndex={-1}>
+        {/* ══ TAB 6: LEARNING GUIDE ══ */}
+        {tab===6&&(<div role="region" aria-label="학습 가이드" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+          <h2 className="sr-only">학습 가이드</h2>
+          {/* 섹션 A: 주식 시작하기 */}
+          <Card title="🚀 주식 시작하기">
+            <div style={{fontSize:13,color:"#8a99b5",marginBottom:12,lineHeight:1.6}}>주식 투자, 어렵지 않아요! 4단계만 따라오세요.</div>
+            <div className="guide-steps">
+              {[
+                {step:"1",emoji:"📱",title:"증권사 계좌 개설하기",desc:"MTS 앱 다운로드 후 비대면 계좌 개설. 신분증만 있으면 10분이면 OK!"},
+                {step:"2",emoji:"💰",title:"투자금 결정하기",desc:"여유자금으로만 투자하세요. 생활비는 절대 X! 잃어도 괜찮은 금액부터 시작."},
+                {step:"3",emoji:"🔎",title:"첫 종목 고르기",desc:"잘 아는 기업, 대형 우량주부터 시작하세요. 삼성전자 같은 익숙한 기업이 좋아요."},
+                {step:"4",emoji:"🧺",title:"분산투자 실천",desc:"한 종목에 몰빵 금지! 여러 섹터에 나눠서 리스크를 줄이세요."}
+              ].map((item,i)=>(
+                <div key={i} style={{background:"linear-gradient(135deg,#0d132088,#7c5cfc06)",border:"1px solid #7c5cfc18",borderRadius:10,padding:"14px 16px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                    <div style={{width:28,height:28,borderRadius:7,background:"linear-gradient(135deg,#7c5cfc,#00e4a0)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:900,color:"#060a12",flexShrink:0}}>{item.step}</div>
+                    <span style={{fontSize:18}} aria-hidden="true">{item.emoji}</span>
+                    <span style={{fontSize:13.5,fontWeight:700,color:"#d5dced"}}>{item.title}</span>
+                  </div>
+                  <div style={{fontSize:12.5,color:"#8a99b5",lineHeight:1.6,paddingLeft:36}}>{item.desc}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* 섹션 B: 필수 투자 용어 */}
+          <Card title="📖 필수 투자 용어">
+            <div style={{fontSize:13,color:"#8a99b5",marginBottom:12,lineHeight:1.6}}>이것만 알면 뉴스가 읽힌다! 꼭 알아야 할 6가지 용어.</div>
+            <div className="guide-terms">
+              {[
+                {term:"PER",full:"주가수익비율",desc:"주가 ÷ 주당순이익. 낮을수록 저평가 가능성",color:"#7c5cfc"},
+                {term:"PBR",full:"주가순자산비율",desc:"주가 ÷ 주당순자산. 1 미만이면 자산 대비 저평가",color:"#00e4a0"},
+                {term:"ROE",full:"자기자본이익률",desc:"순이익 ÷ 자기자본. 높을수록 돈을 잘 벌어옴",color:"#ff8fab"},
+                {term:"EPS",full:"주당순이익",desc:"순이익 ÷ 발행주식수. 높을수록 좋음",color:"#ffb800"},
+                {term:"시가총액",full:"Market Cap",desc:"주가 × 발행주식수. 기업의 전체 가치",color:"#00b4d8"},
+                {term:"배당수익률",full:"Dividend Yield",desc:"배당금 ÷ 주가. 은행 이자 같은 개념",color:"#a78bfa"}
+              ].map((item,i)=>(
+                <div key={i} style={{background:"#0a0f1a",border:"1px solid #161f35",borderRadius:10,padding:"14px 16px"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                    <span style={{fontSize:14,fontWeight:800,color:item.color}}>{item.term}</span>
+                    <span style={{fontSize:11,color:"#374460"}}>({item.full})</span>
+                  </div>
+                  <div style={{fontSize:12.5,color:"#8a99b5",lineHeight:1.6}}>{item.desc}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* 섹션 C: 투자 원칙 5가지 */}
+          <Card title="🏆 투자 원칙 5가지">
+            <div style={{fontSize:13,color:"#8a99b5",marginBottom:12,lineHeight:1.6}}>성공하는 투자자들의 공통 원칙을 기억하세요.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {[
+                {num:"1",title:"분산투자",desc:"달걀을 한 바구니에 담지 마라",emoji:"🧺",gradient:"linear-gradient(135deg,#7c5cfc18,#7c5cfc08)"},
+                {num:"2",title:"장기투자",desc:"단타보다 꾸준히 모아가기",emoji:"⏳",gradient:"linear-gradient(135deg,#00e4a018,#00e4a008)"},
+                {num:"3",title:"손절 기준",desc:"미리 정한 기준에서 과감히 손절",emoji:"✂️",gradient:"linear-gradient(135deg,#ff547018,#ff547008)"},
+                {num:"4",title:"감정 배제",desc:"공포에 사지 말고, 탐욕에 팔지 마라",emoji:"🧘",gradient:"linear-gradient(135deg,#ffb80018,#ffb80008)"},
+                {num:"5",title:"꾸준한 공부",desc:"뉴스, 재무제표, 산업 트렌드 파악",emoji:"📚",gradient:"linear-gradient(135deg,#00b4d818,#00b4d808)"}
+              ].map((item,i)=>(
+                <div key={i} style={{background:item.gradient,border:"1px solid #161f35",borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,#7c5cfc,#00e4a0)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:900,color:"#060a12",flexShrink:0}}>{item.num}</div>
+                  <span style={{fontSize:20,flexShrink:0}} aria-hidden="true">{item.emoji}</span>
+                  <div>
+                    <div style={{fontSize:13.5,fontWeight:700,color:"#d5dced"}}>{item.title}</div>
+                    <div style={{fontSize:12,color:"#8a99b5"}}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>)}
+      </main>
+
+      {/* ══ FLOATING CHATBOT ══ */}
+      <button className="chat-fab" onClick={()=>setChatOpen(!chatOpen)} aria-label={chatOpen?"채팅 닫기":"AI 상담 열기"} title="AI 투자 상담">
+        <span aria-hidden="true">{chatOpen?"✕":"💬"}</span>
+      </button>
+
+      {chatOpen&&(
+        <div className="chat-panel" role="dialog" aria-label="AI 투자 상담">
           <div className="chat-container">
             <div style={{padding:"12px 16px",background:"#0a0f1a",borderBottom:"1px solid #161f35",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div><div style={{fontSize:14.5,fontWeight:700,color:"#d5dced"}}><span aria-hidden="true">💬</span> AI 투자 상담</div><div style={{fontSize:11.5,color:"#374460"}}>무엇이든 물어보세요{beg?" — 초보자 모드 ON":""}</div></div>
-              {chatMsgs.length>0&&<button onClick={()=>setChatMsgs([])} style={{background:"#161f35",border:"1px solid #283350",borderRadius:7,padding:"5px 12px",fontSize:11.5,color:"#5e6e88",cursor:"pointer",fontWeight:600}}>대화 초기화</button>}
+              <div style={{display:"flex",gap:6}}>
+                {chatMsgs.length>0&&<button onClick={()=>setChatMsgs([])} style={{background:"#161f35",border:"1px solid #283350",borderRadius:7,padding:"5px 10px",fontSize:11,color:"#5e6e88",cursor:"pointer",fontWeight:600}}>초기화</button>}
+                <button onClick={()=>setChatOpen(false)} aria-label="채팅 패널 닫기" style={{background:"#161f35",border:"1px solid #283350",borderRadius:7,padding:"5px 10px",fontSize:13,color:"#5e6e88",cursor:"pointer",fontWeight:600}}>✕</button>
+              </div>
             </div>
             <div className="chat-messages" role="log" aria-live="polite" aria-label="대화 내역">
               {chatMsgs.length===0&&!chatLd&&(
-                <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,padding:20}}>
-                  <div style={{fontSize:48,marginBottom:4}} aria-hidden="true">💬</div>
-                  <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:700,color:"#d5dced",marginBottom:6}}>AI 투자 상담사</div><div style={{fontSize:13,color:"#5e6e88",lineHeight:1.6}}>주식, 투자 전략, 포트폴리오 등<br/>무엇이든 편하게 질문하세요</div></div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,width:"100%",maxWidth:400,marginTop:8}}>
-                    {CHAT_SUGGESTIONS.map((s,i)=>(<button key={i} onClick={()=>callChatAI(s)} style={{background:"#0d1320",border:"1px solid #161f35",borderRadius:10,padding:"11px 13px",fontSize:12,color:"#8a99b5",cursor:"pointer",textAlign:"left",lineHeight:1.5,fontFamily:"inherit"}}><span style={{color:"#7c5cfc",marginRight:4}} aria-hidden="true">→</span>{s}</button>))}
+                <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:16}}>
+                  <div style={{fontSize:40,marginBottom:2}} aria-hidden="true">💬</div>
+                  <div style={{textAlign:"center"}}><div style={{fontSize:15,fontWeight:700,color:"#d5dced",marginBottom:4}}>AI 투자 상담사</div><div style={{fontSize:12.5,color:"#5e6e88",lineHeight:1.6}}>주식, 투자 전략, 포트폴리오 등<br/>무엇이든 편하게 질문하세요</div></div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr",gap:6,width:"100%",marginTop:6}}>
+                    {CHAT_SUGGESTIONS.map((s,i)=>(<button key={i} onClick={()=>callChatAI(s)} style={{background:"#0d1320",border:"1px solid #161f35",borderRadius:8,padding:"9px 12px",fontSize:11.5,color:"#8a99b5",cursor:"pointer",textAlign:"left",lineHeight:1.4,fontFamily:"inherit"}}><span style={{color:"#7c5cfc",marginRight:4}} aria-hidden="true">→</span>{s}</button>))}
                   </div>
                 </div>
               )}
@@ -412,8 +540,8 @@ export default function App(){
               <button onClick={()=>{if(chatIn.trim()&&!chatLd)callChatAI(chatIn.trim());}} disabled={chatLd||!chatIn.trim()}>전송</button>
             </div>
           </div>
-        </div>)}
-      </main>
+        </div>
+      )}
     </div>
   );
 }
