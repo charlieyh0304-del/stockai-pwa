@@ -26,7 +26,7 @@ const MENU = [
   {label:"포트폴리오",emoji:"📊",tab:0},
   {label:"AI분석",emoji:"🤖",children:[{label:"종목분석",emoji:"🔍",tab:2},{label:"AI추천",emoji:"💡",tab:3},{label:"시장스캔",emoji:"🌐",tab:4}]},
   {label:"시장정보",emoji:"📈",children:[{label:"실시간시세",emoji:"📈",tab:1},{label:"뉴스",emoji:"📰",tab:5}]},
-  {label:"학습",emoji:"📚",tab:6},
+  {label:"학습",emoji:"📚",tab:7},
 ];
 const CHAT_SUGGESTIONS = [
   "초보자가 주식 시작할 때 알아야 할 것은?",
@@ -184,6 +184,8 @@ export default function App(){
   const[chatIn,setChatIn]=useState("");
   const[chatLd,setChatLd]=useState(false);
   const[chatOpen,setChatOpen]=useState(false);
+  const mainNavRefs=useRef([]);
+  const subNavRefs=useRef([]);
   const panelRef=useRef(null);
   const chatEndRef=useRef(null);
 
@@ -255,7 +257,16 @@ export default function App(){
     let next=null;
     if(e.key==="ArrowRight"){next=(activeMenuIdx+1)%MENU.length;}
     else if(e.key==="ArrowLeft"){next=(activeMenuIdx-1+MENU.length)%MENU.length;}
-    if(next!==null){e.preventDefault();handleMainMenuClick(next);}
+    if(next!==null){e.preventDefault();handleMainMenuClick(next);mainNavRefs.current[next]?.focus();}
+  };
+
+  const handleSubKeyDown=(e,children)=>{
+    const curSubIdx=children.findIndex(c=>c.tab===tab);
+    const total=children.length;
+    let next=null;
+    if(e.key==="ArrowRight"){next=(curSubIdx+1)%total;}
+    else if(e.key==="ArrowLeft"){next=(curSubIdx-1+total)%total;}
+    if(next!==null){e.preventDefault();setTab(children[next].tab);subNavRefs.current[next]?.focus();}
   };
 
   const IS={background:"#070b14",border:"1px solid #161f35",borderRadius:7,padding:"8px 12px",color:"#a0adc4",fontSize:13,outline:"none",fontFamily:"inherit"};
@@ -291,13 +302,13 @@ export default function App(){
           <nav aria-label="주요 메뉴">
             <div className="main-nav" role="menubar">
               {MENU.map((m,i)=>(
-                <button key={i} onClick={()=>handleMainMenuClick(i)} onKeyDown={handleMainKeyDown} role="menuitem" aria-expanded={m.children?activeMenuIdx===i:undefined} aria-haspopup={m.children?"true":undefined} className={`main-nav-btn${activeMenuIdx===i?" active":""}`}><span aria-hidden="true">{m.emoji} </span>{m.label}</button>
+                <button key={i} ref={el=>mainNavRefs.current[i]=el} onClick={()=>handleMainMenuClick(i)} onKeyDown={handleMainKeyDown} role="menuitem" aria-expanded={m.children?activeMenuIdx===i:undefined} aria-haspopup={m.children?"true":undefined} tabIndex={activeMenuIdx===i?0:-1} className={`main-nav-btn${activeMenuIdx===i?" active":""}`}><span aria-hidden="true">{m.emoji} </span>{m.label}</button>
               ))}
             </div>
             {activeMenuObj.children&&(
               <div className="sub-nav" role="menu" aria-label={activeMenuObj.label+" 하위 메뉴"}>
                 {activeMenuObj.children.map((c,i)=>(
-                  <button key={i} onClick={()=>setTab(c.tab)} role="menuitem" className={`sub-nav-btn${tab===c.tab?" active":""}`}><span aria-hidden="true">{c.emoji} </span>{c.label}</button>
+                  <button key={c.tab} ref={el=>subNavRefs.current[i]=el} onClick={()=>setTab(c.tab)} onKeyDown={e=>handleSubKeyDown(e,activeMenuObj.children)} role="menuitem" tabIndex={tab===c.tab?0:-1} className={`sub-nav-btn${tab===c.tab?" active":""}`}><span aria-hidden="true">{c.emoji} </span>{c.label}</button>
                 ))}
               </div>
             )}
@@ -429,8 +440,8 @@ export default function App(){
           )}
         </div>)}
 
-        {/* ══ TAB 6: LEARNING GUIDE ══ */}
-        {tab===6&&(<div role="region" aria-label="학습 가이드" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
+        {/* ══ TAB 7: LEARNING GUIDE ══ */}
+        {tab===7&&(<div role="region" aria-label="학습 가이드" ref={panelRef} tabIndex={-1} style={{display:"flex",flexDirection:"column",gap:14}}>
           <h2 className="sr-only">학습 가이드</h2>
           {/* 섹션 A: 주식 시작하기 */}
           <Card title="🚀 주식 시작하기">
