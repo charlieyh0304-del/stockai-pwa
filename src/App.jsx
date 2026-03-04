@@ -22,8 +22,14 @@ const THEMES = [
 ];
 const BG = `\n중요: 전문 용어마다 괄호로 쉬운 설명을 달아주세요. 예: PER(주가수익비율 - 주가가 순이익의 몇 배인지, 낮을수록 저평가). 숫자는 좋은지 나쁜지 판단 기준도 함께 알려주세요. 각 섹션 끝에 "> 💡 초보자 팁:" 한 줄을 추가해 핵심을 쉽게 요약하세요. 비유와 일상 예시를 적극 활용하세요. 마지막에 "## 📖 용어 사전" 섹션을 추가해 리포트에서 사용된 주요 투자 용어를 한 줄씩 쉽게 설명하세요. 한국어로 답변.\n`;
 
-const TAB_NAMES = ["포트폴리오","실시간","종목분석","AI추천","시장스캔","뉴스"];
-const TAB_EMOJIS = ["📊","📈","🔍","💡","🌐","📰"];
+const TAB_NAMES = ["포트폴리오","실시간","종목분석","AI추천","시장스캔","뉴스","AI챗봇"];
+const TAB_EMOJIS = ["📊","📈","🔍","💡","🌐","📰","💬"];
+const CHAT_SUGGESTIONS = [
+  "초보자가 주식 시작할 때 알아야 할 것은?",
+  "내 포트폴리오 어떻게 개선할 수 있을까?",
+  "PER, PBR이 뭔지 쉽게 설명해줘",
+  "분산투자는 어떻게 하는 건가요?",
+];
 
 const RESPONSIVE_CSS = `
 *{box-sizing:border-box}
@@ -76,6 +82,30 @@ input::placeholder{color:#243050}
   .themes-grid{grid-template-columns:repeat(2,1fr);gap:5px}
   .quick-grid{grid-template-columns:1fr 1fr;gap:6px}
   .tab-btn{padding:5px 8px;font-size:10.5px}
+  .chat-container{height:calc(100vh - 160px)}
+  .chat-input-bar{padding:8px 10px;gap:6px}
+  .chat-input-bar input{font-size:13px;padding:9px 12px}
+  .chat-input-bar button{padding:9px 14px;font-size:12px}
+  .chat-bubble-user,.chat-bubble-ai{max-width:90%;padding:10px 13px;font-size:12.5px}
+}
+
+.chat-container{display:flex;flex-direction:column;height:calc(100vh - 180px);background:#060a12;border-radius:12px;overflow:hidden}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:#161f35;border-radius:2px}
+.chat-bubble-user{align-self:flex-end;background:linear-gradient(135deg,#7c5cfc,#6b4ce0);color:#fff;border-radius:16px 16px 4px 16px;padding:11px 15px;max-width:75%;font-size:13.2px;line-height:1.6;word-break:break-word}
+.chat-bubble-ai{align-self:flex-start;background:#0d1320;border:1px solid #161f35;color:#a0adc4;border-radius:16px 16px 16px 4px;padding:13px 16px;max-width:80%;font-size:13.2px;line-height:1.7;word-break:break-word}
+.chat-input-bar{display:flex;gap:8px;padding:12px 16px;background:#0a0f1a;border-top:1px solid #161f35}
+.chat-input-bar input{flex:1;background:#070b14;border:1px solid #161f35;border-radius:10px;padding:10px 14px;color:#a0adc4;font-size:13.5px;outline:none;font-family:inherit}
+.chat-input-bar input:focus{border-color:#7c5cfc44}
+.chat-input-bar button{background:linear-gradient(135deg,#7c5cfc,#00e4a0);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:13px;padding:10px 20px;cursor:pointer;white-space:nowrap}
+.chat-input-bar button:disabled{opacity:0.5;cursor:default}
+
+@media(max-width:768px){
+  .chat-container{height:calc(100vh - 170px)}
+  .chat-bubble-user,.chat-bubble-ai{max-width:85%}
+  .chat-messages{padding:12px}
+  .chat-input-bar{padding:10px 12px}
 }
 `;
 
@@ -123,10 +153,15 @@ export default function App(){
   const[announce,setAnnounce]=useState("");
   const[apiKey,setApiKey]=useState(()=>localStorage.getItem("stockai-api-key")||"");
   const[showKey,setShowKey]=useState(false);
+  const[chatMsgs,setChatMsgs]=useState([]);
+  const[chatIn,setChatIn]=useState("");
+  const[chatLd,setChatLd]=useState(false);
   const tabRefs=useRef([]);
   const panelRef=useRef(null);
+  const chatEndRef=useRef(null);
 
   useEffect(()=>{panelRef.current?.focus();},[tab]);
+  useEffect(()=>{chatEndRef.current?.scrollIntoView({behavior:"smooth"});},[chatMsgs,chatLd]);
 
   const tI=pf.reduce((s,p)=>s+p.qty*p.avg,0),tC=pf.reduce((s,p)=>s+p.qty*p.cur,0),tR=tI?((tC-tI)/tI)*100:0,tP=tC-tI;
   const sm={};pf.forEach(p=>{sm[p.sec]=(sm[p.sec]||0)+p.qty*p.cur;});
@@ -137,6 +172,23 @@ export default function App(){
 
   const saveApiKey=(key)=>{const k=key.trim();if(k&&!k.startsWith("sk-ant-")){setAnnounce("API 키는 sk-ant-로 시작해야 합니다. 키를 확인해주세요.");}setApiKey(k);localStorage.setItem("stockai-api-key",k);};
   const callAI=async(prompt,sr,sl)=>{if(!apiKey){setShowKey(true);sr("API 키를 먼저 설정해주세요. 헤더의 🔑 버튼을 눌러 Anthropic API 키를 입력하세요.");return;}sl(true);sr("");try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:prompt}],tools:[{type:"web_search_20250305",name:"web_search"}]})});const d=await r.json();if(d.error){sr(d.error.type==="authentication_error"?"API 키가 올바르지 않습니다. 🔑 버튼에서 키를 확인해주세요.":"오류: "+d.error.message);sl(false);return;}sr(d.content?.filter(c=>c.type==="text").map(c=>c.text).join("\n")||"결과를 가져오지 못했습니다.");}catch(e){sr("오류: "+e.message);}sl(false);};
+
+  const callChatAI=async(userMsg)=>{
+    if(!apiKey){setShowKey(true);setChatMsgs(prev=>[...prev,{role:"assistant",content:"API 키를 먼저 설정해주세요. 헤더의 🔑 버튼을 눌러 Anthropic API 키를 입력하세요."}]);return;}
+    const newMsgs=[...chatMsgs,{role:"user",content:userMsg}];
+    setChatMsgs(newMsgs);setChatIn("");setChatLd(true);
+    const ps=pf.map(p=>`${p.symbol}(${p.sec}, 수량:${p.qty}, 평균:${fmt(p.avg)}, 현재:${fmt(p.cur)})`).join(", ");
+    const sysPrompt=`당신은 친절한 AI 투자 상담사입니다. 한국 주식시장 전문가이며, 사용자의 질문에 정확하고 이해하기 쉽게 답변합니다.\n\n사용자 포트폴리오: ${ps||"없음"}\n${beg?"초보자 모드가 켜져 있습니다. 전문 용어마다 괄호로 쉬운 설명을 달아주세요. 비유와 일상 예시를 적극 활용하세요.\n":""}한국어로 답변하세요. 마크다운 형식으로 답변하세요.\n⚠️ 투자 권유가 아닌 정보 제공 목적임을 필요시 안내하세요.`;
+    const apiMsgs=newMsgs.slice(-20).map(m=>({role:m.role,content:m.content}));
+    try{
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,system:sysPrompt,messages:apiMsgs,tools:[{type:"web_search_20250305",name:"web_search"}]})});
+      const d=await r.json();
+      if(d.error){setChatMsgs(prev=>[...prev,{role:"assistant",content:d.error.type==="authentication_error"?"API 키가 올바르지 않습니다. 🔑 버튼에서 키를 확인해주세요.":"오류: "+d.error.message}]);setChatLd(false);return;}
+      const text=d.content?.filter(c=>c.type==="text").map(c=>c.text).join("\n")||"답변을 생성하지 못했습니다.";
+      setChatMsgs(prev=>[...prev,{role:"assistant",content:text}]);
+    }catch(e){setChatMsgs(prev=>[...prev,{role:"assistant",content:"오류가 발생했습니다: "+e.message}]);}
+    setChatLd(false);
+  };
 
   const bg=beg?BG:"\n한국어로 답변.\n";
 
@@ -363,6 +415,38 @@ export default function App(){
           {(nwL||nwR)?(<Card style={{minHeight:160}}>{nwL?<LoadDots msg="최신 주식 뉴스를 검색하고 분석하는 중"/>:<RenderAI text={nwR}/>}</Card>):(
             <Card style={{background:"linear-gradient(135deg,#0d132088,#7c5cfc08)",border:"1px solid #7c5cfc22"}}><div style={{textAlign:"center",padding:"30px 0"}}><div style={{fontSize:40,marginBottom:10}} aria-hidden="true">📰</div><div style={{fontSize:14.5,color:"#8a99b5",fontWeight:600,marginBottom:6}}>뉴스 브리핑을 받아보세요</div><div style={{fontSize:12,color:"#374460"}}>AI가 오늘의 주요 주식 뉴스를 검색하여 핵심만 요약해 드립니다</div></div></Card>
           )}
+        </div>)}
+
+        {/* ══ TAB 6: AI CHATBOT ══ */}
+        {tab===6&&(<div role="tabpanel" id="tabpanel-6" aria-labelledby="tab-6" ref={panelRef} tabIndex={-1}>
+          <div className="chat-container">
+            <div style={{padding:"12px 16px",background:"#0a0f1a",borderBottom:"1px solid #161f35",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div><div style={{fontSize:14.5,fontWeight:700,color:"#d5dced"}}><span aria-hidden="true">💬</span> AI 투자 상담</div><div style={{fontSize:11.5,color:"#374460"}}>무엇이든 물어보세요{beg?" — 초보자 모드 ON":""}</div></div>
+              {chatMsgs.length>0&&<button onClick={()=>setChatMsgs([])} style={{background:"#161f35",border:"1px solid #283350",borderRadius:7,padding:"5px 12px",fontSize:11.5,color:"#5e6e88",cursor:"pointer",fontWeight:600}}>대화 초기화</button>}
+            </div>
+            <div className="chat-messages" role="log" aria-live="polite" aria-label="대화 내역">
+              {chatMsgs.length===0&&!chatLd&&(
+                <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16,padding:20}}>
+                  <div style={{fontSize:48,marginBottom:4}} aria-hidden="true">💬</div>
+                  <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:700,color:"#d5dced",marginBottom:6}}>AI 투자 상담사</div><div style={{fontSize:13,color:"#5e6e88",lineHeight:1.6}}>주식, 투자 전략, 포트폴리오 등<br/>무엇이든 편하게 질문하세요</div></div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,width:"100%",maxWidth:400,marginTop:8}}>
+                    {CHAT_SUGGESTIONS.map((s,i)=>(<button key={i} onClick={()=>callChatAI(s)} style={{background:"#0d1320",border:"1px solid #161f35",borderRadius:10,padding:"11px 13px",fontSize:12,color:"#8a99b5",cursor:"pointer",textAlign:"left",lineHeight:1.5,fontFamily:"inherit"}}><span style={{color:"#7c5cfc",marginRight:4}} aria-hidden="true">→</span>{s}</button>))}
+                  </div>
+                </div>
+              )}
+              {chatMsgs.map((m,i)=>(
+                m.role==="user"
+                  ?<div key={i} className="chat-bubble-user">{m.content}</div>
+                  :<div key={i} className="chat-bubble-ai"><RenderAI text={m.content}/></div>
+              ))}
+              {chatLd&&<div className="chat-bubble-ai" style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:18,height:18,border:"2px solid #7c5cfc44",borderTop:"2px solid #7c5cfc",borderRadius:"50%",animation:"spin 1s linear infinite"}} aria-hidden="true"/><span style={{color:"#5e6e88",fontSize:12.5}}>AI가 답변을 작성 중...</span></div>}
+              <div ref={chatEndRef}/>
+            </div>
+            <div className="chat-input-bar">
+              <input value={chatIn} onChange={e=>setChatIn(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&chatIn.trim()&&!chatLd)callChatAI(chatIn.trim());}} placeholder="메시지를 입력하세요..." aria-label="메시지 입력" disabled={chatLd}/>
+              <button onClick={()=>{if(chatIn.trim()&&!chatLd)callChatAI(chatIn.trim());}} disabled={chatLd||!chatIn.trim()}>전송</button>
+            </div>
+          </div>
         </div>)}
       </main>
     </div>
